@@ -3,17 +3,25 @@
 #include <queue>
 #include <cstring>
 
+const std::string red("\033[0;91m");
+const std::string blue("\033[0;94m");
+const std::string red_player("\033[0;31m");
+const std::string blue_player("\033[0;34m");
+const std::string white("\033[0;97m");
+const std::string black("\033[0;90m");
+const std::string reset("\033[0m");
+
 using namespace std;
 
 enum Color {
-    White, // Initital 0
+    White, // Initial 0
     Blue, // Player One
     Red, // Player Two
     Black // Explosion
 };
 
-static int Depth = 4;
-static int Round = 10;
+static int Depth = 2;
+static int Round = 100;
 
 class Student {
 public:
@@ -221,17 +229,62 @@ int main() {
     }
 
     for (int i = 0; i < Round; i++) {
+        // check game status
+        if (player.game_is_over(game_board, game_board_color, Blue)) {
+            cout << "=====GAME OVER=====\n";
+            cout << "=====藍色玩家獲勝=====\n";
+            break;
+        }
+
+        if (player.game_is_over(game_board, game_board_color, Red)) {
+            cout << "=====GAME OVER=====\n";
+            cout << "=====紅色玩家獲勝=====\n";
+            break;
+        }
+
+        // play
         player.makeMove(game_board, game_board_max, game_board_color, current_player);
         x = player.getX();
         y = player.getY();
-        cout << current_player << ":" << x << " " << y << " \n";
-        player.move(x, y, play_one, game_board, game_board_color);
-//        for (int i = 0; i < 5; i++) {
-//            for (int j = 0; j < 6; j++) {
-//                cout << game_board[i][j] << " ";
-//            }
-//            cout << "\n";
-//        }
+        player.move(x, y, current_player, game_board, game_board_color);
+
+        // print result
+        switch(current_player) {
+            case Blue:
+                cout << blue_player << "藍色" << reset << "玩家下: " << x << " " << y << " \n";
+                break;
+            case Red:
+                cout << red_player << "紅色" << reset << "玩家下: " << x << " " << y << " \n";
+                break;
+            default:
+                break;
+        }
+
+        // print board
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 6; j++) {
+                switch(game_board_color[i][j]) {
+                    case White:
+                        cout << white << game_board[i][j] << reset << " ";
+                        break;
+                    case Black:
+                        cout << black << game_board[i][j] << reset << " ";
+                        break;
+                    case Blue:
+                        cout << blue << game_board[i][j] << reset << " ";
+                        break;
+                    case Red:
+                        cout << red << game_board[i][j] << reset << " ";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            cout << "\n";
+        }
+        cout << "\n";
+
+        // change player
         if (current_player == play_one)
             current_player = play_two;
         else
