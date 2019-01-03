@@ -20,7 +20,7 @@ enum Color {
     Black // Explosion
 };
 
-static int Depth = 2;
+static int Depth = 4;
 static int Round = 100;
 
 class Student {
@@ -249,6 +249,7 @@ int main() {
         player.move(x, y, current_player, game_board, game_board_color);
 
         // print result
+        cout << "[第" << i+1 << "回合] ";
         switch(current_player) {
             case Blue:
                 cout << blue_player << "藍色" << reset << "玩家下: " << x << " " << y << " \n";
