@@ -20,7 +20,7 @@ enum Color {
     Black // Explosion
 };
 
-static int Depth = 4;
+static int Depth = 100;
 static int Round = 100;
 
 class Student {
@@ -36,56 +36,54 @@ public:
         }
 
         // 使用 minimax 更改 private 的 x, y 值
-        int temp = minimax(Record, color, Depth, inputColor);
+        double temp = minimax(Record, color, Depth, inputColor);
     }
 
-    int evaluate(int virtual_board[5][6], Color color[5][6]) {
-        // 角落分數最高, 再來邊上, 再來中央, 分數為該格子顏色乘以該格子的權重再乘以該格子的棋子數目
-        // 顏色定義為藍色1, 紅色-1, 藍色希望越高越好, 紅色希望越低越好
-        int corner_weight = 4, edge_weight = 2, center_weight = 1, total_weight = 0;
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 6; j++) {
-                if (i == 0 || i == 4) {
-                    if (j == 0 || j == 5)
-                        total_weight += virtual_board[i][j] * corner_weight * player_color(color[i][j]);
-                    else
-                        total_weight += virtual_board[i][j] * edge_weight * player_color(color[i][j]);
-                } else {
-                    if (j == 0 || j == 5)
-                        total_weight += virtual_board[i][j] * edge_weight * player_color(color[i][j]);
-                    else
-                        total_weight += virtual_board[i][j] * center_weight * player_color(color[i][j]);
-                }
-            }
-        }
-        return total_weight;
-    }
+//    int evaluate(int virtual_board[5][6], Color color[5][6]) {
+//        // 角落分數最高, 再來邊上, 再來中央, 分數為該格子顏色乘以該格子的權重再乘以該格子的棋子數目
+//        // 顏色定義為藍色1, 紅色-1, 藍色希望越高越好, 紅色希望越低越好
+//        int corner_weight = 4, edge_weight = 2, center_weight = 1, total_weight = 0;
+//        for (int i = 0; i < 5; i++) {
+//            for (int j = 0; j < 6; j++) {
+//                if (i == 0 || i == 4) {
+//                    if (j == 0 || j == 5)
+//                        total_weight += virtual_board[i][j] * corner_weight * player_color(color[i][j]);
+//                    else
+//                        total_weight += virtual_board[i][j] * edge_weight * player_color(color[i][j]);
+//                } else {
+//                    if (j == 0 || j == 5)
+//                        total_weight += virtual_board[i][j] * edge_weight * player_color(color[i][j]);
+//                    else
+//                        total_weight += virtual_board[i][j] * center_weight * player_color(color[i][j]);
+//                }
+//            }
+//        }
+//        return total_weight;
+//    }
 
     int player_color(Color inputColor) {
-        // return 玩家顏色的數字以方便計算分數, 藍色為1, 紅色為-1, 黑色或白色為0
-        if (inputColor == Black || inputColor == White)
-            return 0;
-        else
-            return (inputColor == Blue) ? 1 : -1;
+        // return 玩家顏色的數字以方便計算分數, 藍色為0, 紅色為1
+        return (inputColor == Blue) ? 0 : 1;
     }
 
-    int minimax(int board[5][6], Color board_color[5][6], int depth, Color inputColor) {
+    double minimax(int board[5][6], Color board_color[5][6], int depth, Color inputColor) {
         // 目前檯面的評分值, 希望能找到比這值更好的
-        int value;
-        // 對藍色玩家來說希望越大越好, 對紅色玩家來說希望越小越好, 目前初始值為藍色：-10000, 紅色：10000
-        int best_value = -10000 * player_color(inputColor);
+        double value = 0.5;
+        // 對藍色玩家來說希望越大越好, 對紅色玩家來說希望越小越好, 目前初始值為藍色：0, 紅色：1
+        double best_value = player_color(inputColor);
         // 當棋子下在virtual_board上, 遇到已經爆炸(黑色), 或敵對顏色時, return一個很差的值, 使得minimax選值的時候不會選到他們
-        // 對 Blue 來說會是-10001, 對 Red 來說是10001
-        int illegal_value = -10001 * player_color(inputColor);
-        // 每當有一步能直接清空對面所有棋子時, 給出一個最好的值, 對Blue來說是10000, 對Red來說是-10000
-        int killing_value = 10000 * player_color(inputColor);
+        // 對 Blue 來說會是-100, 對 Red 來說是101
+        double illegal_value = -1 * (player_color(inputColor) * - 201) - 100;
+        // 當前階層可能的回合
+        double section_round = 0;
+        // 當前階層贏的回合
+        double section_win = 0;
+        // 暫存值
+        double temp;
 
-        // 終止條件, 如果檯面遊戲已經結束, return 最好的值, 或因為 minimax 深度到0了直接對檯面評分
-        if (depth == 0 || game_is_over(board, board_color, inputColor)) {
-            if (game_is_over(board, board_color, inputColor))
-                return killing_value;
-            else
-                return evaluate(virtual_board, virtual_color);
+        // 終止條件, 如果檯面遊戲已經結束, 回傳勝利者
+        if (game_is_over(board, board_color, inputColor)) {
+            return (inputColor == Blue) ? 1 : 0;
         }
 
         // 對 virtual_board 上每個點下一次, 先判斷我們是藍色還是紅色, 在判斷這步是不是合法的, 若否則得到很差的值
@@ -94,16 +92,28 @@ public:
             for (int j = 0; j < 6; j++) {
                 if (inputColor == Blue) {
                     if (is_valid_move(i, j, inputColor)) {
+                        section_round++;
                         move(i, j, Blue, virtual_board, virtual_color);
-                        value = minimax(virtual_board, virtual_color, depth - 1, Red);
+                        temp = minimax(virtual_board, virtual_color, depth - 1, Red);
+                        if (temp != -999) {
+                            // 有進行遊戲才計算
+                            value = temp;
+                            section_win += value;
+                        }
                         reset_board(board, board_color);
                     } else
                         value = illegal_value;
                     best_value = max(best_value, value);
                 } else {
                     if (is_valid_move(i, j, inputColor)) {
+                        section_round++;
                         move(i, j, Red, virtual_board, virtual_color);
-                        value = minimax(virtual_board, virtual_color, depth - 1, Blue);
+                        temp = minimax(virtual_board, virtual_color, depth - 1, Blue);
+                        if (temp != -999) {
+                            // 有進行遊戲才計算
+                            value = temp;
+                            section_win += value;
+                        }
                         reset_board(board, board_color);
                     } else
                         value = illegal_value;
@@ -115,7 +125,19 @@ public:
                 }
             }
         }
-        return best_value;
+        if (section_round == 0) {
+            // 表示遊戲已經結束,沒有任何位置可下
+            return -999;
+        } else if (section_win == 0) {
+            // 該層全輸,如果是藍色勝利分數為0,紅色為1
+            if (inputColor == Blue) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } else {
+            return (section_win / section_round);
+        }
     }
 
     void explosion(int x, int y, Color inputColor, int board[5][6], Color board_color[5][6]) {
@@ -170,7 +192,8 @@ public:
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 6; j++) {
                 counter += board[i][j];
-                if (board_color[i][j] == opponent_color(inputColor)) whip_out = false;
+                if (board_color[i][j] == opponent_color(inputColor) || board_color[i][j] == White)
+                    whip_out = false;
             }
         }
 
@@ -207,6 +230,8 @@ int main() {
     int y = -1;
     int game_board[5][6];
     int game_board_max[5][6];
+    bool game_over = false;
+    int game_round = 0;
     Color game_board_color[5][6];
     Color play_one = Blue;
     Color play_two = Red;
@@ -228,17 +253,21 @@ int main() {
         }
     }
 
-    for (int i = 0; i < Round; i++) {
+    while (!game_over) {
+        game_round++;
+
         // check game status
         if (player.game_is_over(game_board, game_board_color, Blue)) {
             cout << "=====GAME OVER=====\n";
             cout << "=====藍色玩家獲勝=====\n";
+            game_over = true;
             break;
         }
 
         if (player.game_is_over(game_board, game_board_color, Red)) {
             cout << "=====GAME OVER=====\n";
             cout << "=====紅色玩家獲勝=====\n";
+            game_over = true;
             break;
         }
 
@@ -249,7 +278,7 @@ int main() {
         player.move(x, y, current_player, game_board, game_board_color);
 
         // print result
-        cout << "[第" << i+1 << "回合] ";
+        cout << "[第" << game_round << "回合] ";
         switch(current_player) {
             case Blue:
                 cout << blue_player << "藍色" << reset << "玩家下: " << x << " " << y << " \n";
